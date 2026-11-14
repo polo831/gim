@@ -48,21 +48,33 @@ class DataBase
 	}
 
 	public static function query($sql, $params = []){
-		$statement = static::connection()->prepare($sql);
+		$db = static::connection();
+		if (!($db instanceof PDO)) {
+			return [];
+		}
+		$statement = $db->prepare($sql);
 		$statement->execute($params);
 		$result = $statement->fetchAll(PDO::FETCH_OBJ);
 		return $result;
 	}
 
 	public static function execute($sql, $params = []){
-		$statement = static::connection()->prepare($sql);
+		$db = static::connection();
+		if (!($db instanceof PDO)) {
+			return false;
+		}
+		$statement = $db->prepare($sql);
 		$result = $statement->execute($params);
 		return $result;
 	}
 
 	public static function getRecords($sql, $params = []){
 		$result['status'] = true;
-		$statement = static::connection()->prepare($sql);
+		$db = static::connection();
+		if (!($db instanceof PDO)) {
+			return ['status' => false, 'resultado' => []];
+		}
+		$statement = $db->prepare($sql);
 		try {
 			$statement->execute($params);
 			$resultado = $statement->fetchAll(PDO::FETCH_OBJ);
@@ -74,7 +86,7 @@ class DataBase
 
 		if ($resultado === false) {
 			$result['status'] = false;
-			$result['resultado'] = $e->errorInfo;
+			$result['resultado'] = isset($e) ? $e->errorInfo : [];
 		}else{
 			$result['resultado'] = $resultado;
 		}
@@ -83,7 +95,11 @@ class DataBase
 	}
 
 	public static function getRecord($sql, $params = []){
-		$statement = static::connection()->prepare($sql);
+		$db = static::connection();
+		if (!($db instanceof PDO)) {
+			return null;
+		}
+		$statement = $db->prepare($sql);
 		// echo "$sql";
 		$statement->execute($params);
 		$result = $statement->fetch(PDO::FETCH_OBJ);

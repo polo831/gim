@@ -32,10 +32,14 @@ class Controller
 	}
 
 	public function action404(){
-		echo "Error 404 - Página no encontrada - CONTROLLER";
-		static::path();
-		$ruta = self::$path;
-		header('Location:'.$ruta.'404');
+		http_response_code(404);
+		echo "<!DOCTYPE html><html lang='es'><head><meta charset='UTF-8'><title>404 No Encontrado</title>";
+		echo "<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>";
+		echo "</head><body class='bg-dark text-white d-flex justify-content-center align-items-center vh-100 text-center'>";
+		echo "<div><h1 class='display-1 fw-bold'>404</h1><p class='fs-4'>Página no encontrada</p>";
+		echo "<a href='/gim/app/views/index.php' class='btn btn-primary'>Ir al Inicio</a></div>";
+		echo "</body></html>";
+		exit();
 	}
 	
 	public static function path(){
