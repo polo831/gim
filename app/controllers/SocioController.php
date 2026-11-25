@@ -1,14 +1,14 @@
 <?php
-// Carga de DataBase y modelo Socio
 require_once __DIR__ . '/../core/DataBase.php';
 require_once __DIR__ . '/../models/SocioModel.php';
 
-// Asegurar carga de variables de entorno desde .env si no están presentes
 if (!isset($_ENV['DB_HOST']) && file_exists(__DIR__ . '/../../.env')) {
     $envLines = file(__DIR__ . '/../../.env', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
     foreach ($envLines as $line) {
         $line = trim($line);
-        if ($line === '' || strpos($line, '#') === 0) continue;
+        if ($line === '' || strpos($line, '#') === 0) {
+            continue;
+        }
         if (strpos($line, '=') !== false) {
             list($name, $value) = explode('=', $line, 2);
             $name = trim($name);
@@ -20,13 +20,13 @@ if (!isset($_ENV['DB_HOST']) && file_exists(__DIR__ . '/../../.env')) {
     }
 }
 
-class SocioController {
-
-    // Validar ingreso de socio mediante DNI en la PC de recepción
-    public static function verificarIngreso() {
+class SocioController
+{
+    public static function verificarIngreso()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['dni'])) {
             $dni = trim($_POST['dni']);
-            $socio = Socio::buscarPorDni($dni);
+            $socio = SocioModel::buscarPorDni($dni);
 
             $hoy = date('Y-m-d');
 
@@ -34,14 +34,15 @@ class SocioController {
                 $vencimiento = $socio->fecha_vencimiento;
                 $permitido = ($vencimiento >= $hoy);
 
-                // Registrar asistencia con hora exacta
-                Socio::registrarAsistencia($socio->id_socio, $permitido);
+                SocioModel::registrarAsistencia($socio->id_socio, $permitido);
 
                 $diffSegundos = strtotime($vencimiento) - strtotime($hoy);
                 $dias_restantes = (int)round($diffSegundos / 86400);
 
                 return [
                     'encontrado' => true,
+                    'id_socio' => $socio->id_socio,
+                    'dni' => $socio->dni,
                     'nombre' => $socio->nombre . ' ' . $socio->apellido,
                     'vencimiento' => $vencimiento,
                     'permitido' => $permitido,
@@ -54,18 +55,19 @@ class SocioController {
         return null;
     }
 
-    public static function listar() {
-        return Socio::obtenerTodos();
+    public static function listar()
+    {
+        return SocioModel::obtenerTodos();
     }
 
-    public static function guardar() {
+    public static function guardar()
+    {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $fechaPago = !empty($_POST['fecha_pago']) ? $_POST['fecha_pago'] : date('Y-m-d');
             $fechaVencimiento = $_POST['fecha_vencimiento'];
 
             if (isset($_POST['id_socio']) && !empty($_POST['id_socio'])) {
-                // Actualizar
-                Socio::actualizar([
+                SocioModel::actualizar([
                     ':id_socio' => $_POST['id_socio'],
                     ':dni' => $_POST['dni'],
                     ':nombre' => $_POST['nombre'],
@@ -78,8 +80,7 @@ class SocioController {
                 ]);
                 $idSocio = $_POST['id_socio'];
             } else {
-                // Crear nuevo
-                $idSocio = Socio::crear([
+                $idSocio = SocioModel::crear([
                     ':dni' => $_POST['dni'],
                     ':nombre' => $_POST['nombre'],
                     ':apellido' => $_POST['apellido'],
@@ -91,9 +92,8 @@ class SocioController {
                 ]);
             }
 
-            // Registrar también en la tabla pagos
-            if ($idSocio) {
-                Socio::registrarPago($idSocio, $fechaPago, $fechaVencimiento);
+            if ($idSocio && method_exists('SocioModel', 'registrarPago')) {
+                SocioModel::registrarPago($idSocio, $fechaPago, $fechaVencimiento);
             }
 
             header("Location: dashboard.php");
@@ -101,9 +101,10 @@ class SocioController {
         }
     }
 
-    public static function borrar() {
+    public static function borrar()
+    {
         if (isset($_GET['id'])) {
-            Socio::eliminar($_GET['id']);
+            SocioModel::eliminar($_GET['id']);
             header("Location: dashboard.php");
             exit();
         }
